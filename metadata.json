@@ -1,0 +1,6 @@
+{
+  "name": "HOTEL IT INVENTORY MANAGEMENT",
+  "description": "IT Department Inventory Management System for tracking used, repaired, and returned IT equipment.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

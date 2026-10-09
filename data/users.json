@@ -1,0 +1,32 @@
+[
+  {
+    "id": "user-1",
+    "username": "ITMANAGER",
+    "passwordHash": "f0e3853d5dec9fbe9cbe8fa0dfb2c86f9434dd8f927021c55fa7eae82fc0f3797426d14b4680f97f90d38fcd6d6e2b7e4585551d2390861c78929adc5556f798",
+    "salt": "695a48ffe8442bef8435f4c163582db9",
+    "role": "IT MANAGER",
+    "displayName": "IT Manager",
+    "createdAt": "2026-10-09T00:59:38.647Z",
+    "updatedAt": "2026-10-09T00:59:38.647Z"
+  },
+  {
+    "id": "user-2",
+    "username": "ITASSIST",
+    "passwordHash": "6cb7f8e156b23e432048e9f1b731aba22a87588362bfd17245fc176450008ab79327be1293d1043375b8fada414e6e769a21f6a994410c9447e277c84223083a",
+    "salt": "156923c104405e1d0bbab45ea4743af3",
+    "role": "IT ASSIST",
+    "displayName": "IT Assistant",
+    "createdAt": "2026-10-09T00:59:38.647Z",
+    "updatedAt": "2026-10-09T00:59:38.647Z"
+  },
+  {
+    "id": "user-3",
+    "username": "ITTRAINEE",
+    "passwordHash": "b957fe65db15ac00be874fed176a98262bf0ec779747ca4ec9e4d02bc49165748b6d3f4dfe2c0fd8a9be85f35f812cf4727abce2bcc08324a3c956a60267bef5",
+    "salt": "36d4acf8401b7a2f3a0a4567615544be",
+    "role": "IT TRAINEE",
+    "displayName": "IT Trainee",
+    "createdAt": "2026-10-09T00:59:38.647Z",
+    "updatedAt": "2026-10-09T01:00:53.591Z"
+  }
+]

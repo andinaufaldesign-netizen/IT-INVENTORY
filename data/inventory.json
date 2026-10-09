@@ -1,0 +1,93 @@
+[
+  {
+    "itemName": "reader onity",
+    "photoUrl": "/api/uploads/img_1791511838239_7171.jpg",
+    "category": "NETWORK ITEMS",
+    "dateRepaired": "2026-10-09",
+    "serialNumber": null,
+    "createdBy": "ITTRAINEE",
+    "updatedBy": "ITTRAINEE",
+    "id": "INV-MV0BW5GX-581",
+    "createdAt": "2026-10-09T02:10:38.385Z",
+    "updatedAt": "2026-10-09T02:10:38.385Z",
+    "quantity": 1
+  },
+  {
+    "id": "INV-2026-001",
+    "itemName": "Dell OptiPlex 7090 Micro Desktop",
+    "photoUrl": "https://images.unsplash.com/photo-1587831990711-23ca6441447b?auto=format&fit=crop&w=600&q=80",
+    "category": "PC ITEMS",
+    "dateRepaired": "2026-10-05",
+    "serialNumber": "DL-7090-8841B",
+    "createdAt": "2026-10-05T07:30:00.000Z",
+    "createdBy": "ITMANAGER",
+    "updatedAt": "2026-10-08T14:35:00.000Z",
+    "updatedBy": "ITASSIST",
+    "quantity": 1
+  },
+  {
+    "id": "INV-2026-002",
+    "itemName": "Cisco Catalyst 2960-X 24-Port Gigabit Switch",
+    "photoUrl": "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&w=600&q=80",
+    "category": "NETWORK ITEMS",
+    "dateRepaired": "2026-08-14",
+    "serialNumber": "CSCO-2960X-9902",
+    "createdAt": "2026-08-14T09:15:00.000Z",
+    "createdBy": "ITASSIST",
+    "updatedAt": "2026-08-14T13:15:00.000Z",
+    "updatedBy": "ITASSIST",
+    "quantity": 1
+  },
+  {
+    "id": "INV-2026-003",
+    "itemName": "Hikvision DS-2CD2143G0 Outdoor Dome Camera",
+    "photoUrl": "https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&w=600&q=80",
+    "category": "CCTV & TV ITEMS",
+    "dateRepaired": "2026-08-20",
+    "serialNumber": "HKV-DOME-7721A",
+    "createdAt": "2026-08-20T11:00:00.000Z",
+    "createdBy": "ITTRAINEE",
+    "updatedAt": "2026-08-20T11:00:00.000Z",
+    "updatedBy": "ITTRAINEE",
+    "quantity": 1
+  },
+  {
+    "id": "INV-2026-004",
+    "itemName": "Samsung 43-inch Hospitality Smart TV (Guest Room Retur)",
+    "photoUrl": "https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?auto=format&fit=crop&w=600&q=80",
+    "category": "CCTV & TV ITEMS",
+    "dateRepaired": "2026-09-02",
+    "serialNumber": "SAM-HTV-4309X",
+    "createdAt": "2026-09-02T16:20:00.000Z",
+    "createdBy": "ITTRAINEE",
+    "updatedAt": "2026-09-02T16:48:00.000Z",
+    "updatedBy": "ITTRAINEE",
+    "quantity": 1
+  },
+  {
+    "id": "INV-2026-005",
+    "itemName": "Ubiquiti UniFi UAP-AC-PRO Access Point",
+    "photoUrl": "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=600&q=80",
+    "category": "NETWORK ITEMS",
+    "dateRepaired": "2026-10-02",
+    "serialNumber": "UBNT-ACPRO-3310",
+    "createdAt": "2026-10-02T10:00:00.000Z",
+    "createdBy": "ITMANAGER",
+    "updatedAt": "2026-10-02T10:00:00.000Z",
+    "updatedBy": "ITMANAGER",
+    "quantity": 1
+  },
+  {
+    "id": "INV-2026-006",
+    "itemName": "HP ProDesk 400 G6 Core i5 POS Backoffice",
+    "photoUrl": "https://images.unsplash.com/photo-1547082299-de196ea013d6?auto=format&fit=crop&w=600&q=80",
+    "category": "PC ITEMS",
+    "dateRepaired": "2026-07-28",
+    "serialNumber": "HP-PD400-5542",
+    "createdAt": "2026-07-28T08:30:00.000Z",
+    "createdBy": "ITASSIST",
+    "updatedAt": "2026-07-28T08:30:00.000Z",
+    "updatedBy": "ITASSIST",
+    "quantity": 1
+  }
+]

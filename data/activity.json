@@ -1,0 +1,97 @@
+[
+  {
+    "id": "act-mv0c24mr",
+    "action": "ADD",
+    "itemId": "INV-MV0C24MR-505",
+    "itemName": "Grandstream GXP1625 IP Phone",
+    "category": "NETWORK ITEMS",
+    "performedBy": "ITMANAGER",
+    "timestamp": "2026-10-09T02:15:17.235Z",
+    "details": "Added new item (NETWORK ITEMS)"
+  },
+  {
+    "id": "act-mv0bw5gx",
+    "action": "ADD",
+    "itemId": "INV-MV0BW5GX-581",
+    "itemName": "reader onity",
+    "category": "NETWORK ITEMS",
+    "performedBy": "ITTRAINEE",
+    "timestamp": "2026-10-09T02:10:38.385Z",
+    "details": "Added new item (NETWORK ITEMS)"
+  },
+  {
+    "id": "act-mv09ds22",
+    "action": "DELETE",
+    "itemId": "INV-MV09DDMX-462",
+    "itemName": "TP-Link TL-SG1016D 16-Port Gigabit Switch (Refurbished)",
+    "category": "NETWORK ITEMS",
+    "performedBy": "ITMANAGER",
+    "timestamp": "2026-10-09T01:00:21.962Z",
+    "details": "Removed item from inventory"
+  },
+  {
+    "id": "act-mv09di8j",
+    "action": "EDIT",
+    "itemId": "INV-MV09DDMX-462",
+    "itemName": "TP-Link TL-SG1016D 16-Port Gigabit Switch (Refurbished)",
+    "category": "NETWORK ITEMS",
+    "performedBy": "ITMANAGER",
+    "timestamp": "2026-10-09T01:00:09.235Z",
+    "details": "Updated inventory details"
+  },
+  {
+    "id": "act-mv09ddmx",
+    "action": "ADD",
+    "itemId": "INV-MV09DDMX-462",
+    "itemName": "TP-Link TL-SG1016D 16-Port Switch",
+    "category": "NETWORK ITEMS",
+    "performedBy": "ITTRAINEE",
+    "timestamp": "2026-10-09T01:00:03.273Z",
+    "details": "Added new item (NETWORK ITEMS)"
+  },
+  {
+    "id": "act-1",
+    "action": "EDIT",
+    "itemName": "Dell OptiPlex 7090 Micro Desktop",
+    "category": "PC ITEMS",
+    "performedBy": "ITASSIST",
+    "timestamp": "2026-10-08T14:35:00.000Z",
+    "details": "Repaired power supply and tested RAM"
+  },
+  {
+    "id": "act-2",
+    "action": "ADD",
+    "itemName": "Ubiquiti UniFi UAP-AC-PRO Access Point",
+    "category": "NETWORK ITEMS",
+    "performedBy": "ITMANAGER",
+    "timestamp": "2026-10-02T10:00:00.000Z",
+    "details": "Firmware reset and verified PoE port"
+  },
+  {
+    "id": "act-3",
+    "action": "ADD",
+    "itemName": "Samsung 43-inch Hospitality Smart TV",
+    "category": "CCTV & TV ITEMS",
+    "performedBy": "ITTRAINEE",
+    "timestamp": "2026-09-02T16:48:00.000Z",
+    "details": "Cleaned backlight connector and calibrated colors"
+  },
+  {
+    "id": "act-4",
+    "action": "ADD",
+    "itemName": "Hikvision DS-2CD2143G0 Outdoor Dome Camera",
+    "category": "CCTV & TV ITEMS",
+    "performedBy": "ITTRAINEE",
+    "timestamp": "2026-08-20T11:00:00.000Z",
+    "details": "Replaced dome glass and verified IR night vision"
+  },
+  {
+    "id": "act-5",
+    "action": "ADD",
+    "itemName": "Cisco Catalyst 2960-X 24-Port Gigabit Switch",
+    "category": "NETWORK ITEMS",
+    "performedBy": "ITASSIST",
+    "timestamp": "2026-08-14T13:15:00.000Z",
+    "details": "Replaced faulty fan module and wiped VLAN configs"
+  }
+]
