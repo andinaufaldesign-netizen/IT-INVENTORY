@@ -2,11 +2,11 @@ import React from 'react';
 import {
   LayoutDashboard,
   Boxes,
-  Monitor,
-  Network,
-  Tv,
   CalendarDays,
+  CalendarRange,
   FileSpreadsheet,
+  FolderDown,
+  ClipboardList,
   Users,
   Settings,
   LogOut,
@@ -18,11 +18,11 @@ import { InventoryCategory } from '../types';
 export type NavTab =
   | 'dashboard'
   | 'inventory'
-  | 'pc-items'
-  | 'network-items'
-  | 'cctv-items'
-  | 'monthly-data'
-  | 'export-data'
+  | 'purchase-orders'
+  | 'monthly-data-inventory'
+  | 'monthly-data-purchase-orders'
+  | 'export-data-inventory'
+  | 'export-data-purchase-orders'
   | 'user-management'
   | 'settings';
 
@@ -36,8 +36,11 @@ interface SidebarProps {
     pc: number;
     network: number;
     cctv: number;
+    room: number;
     total: number;
   };
+  purchaseOrderCount?: number;
+  pendingPOCount?: number;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -46,7 +49,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onLogout,
   isOpenMobile,
   onCloseMobile,
-  categoryCounts = { pc: 0, network: 0, cctv: 0, total: 0 },
+  categoryCounts = { pc: 0, network: 0, cctv: 0, room: 0, total: 0 },
+  purchaseOrderCount = 0,
+  pendingPOCount = 0,
 }) => {
   const navItems = [
     {
@@ -62,36 +67,34 @@ export const Sidebar: React.FC<SidebarProps> = ({
       badge: categoryCounts.total,
     },
     {
-      id: 'pc-items' as NavTab,
-      label: 'PC Items',
-      icon: Monitor,
-      badge: categoryCounts.pc,
-      categoryFilter: 'PC ITEMS' as InventoryCategory,
+      id: 'purchase-orders' as NavTab,
+      label: 'Purchase Order Data',
+      icon: ClipboardList,
+      badge: pendingPOCount > 0 ? `${pendingPOCount} Pending` : purchaseOrderCount,
+      badgeHighlight: pendingPOCount > 0,
     },
     {
-      id: 'network-items' as NavTab,
-      label: 'Network Items',
-      icon: Network,
-      badge: categoryCounts.network,
-      categoryFilter: 'NETWORK ITEMS' as InventoryCategory,
-    },
-    {
-      id: 'cctv-items' as NavTab,
-      label: 'CCTV & TV Items',
-      icon: Tv,
-      badge: categoryCounts.cctv,
-      categoryFilter: 'CCTV & TV ITEMS' as InventoryCategory,
-    },
-    {
-      id: 'monthly-data' as NavTab,
-      label: 'Monthly Data',
+      id: 'monthly-data-inventory' as NavTab,
+      label: 'Monthly Data Inventory',
       icon: CalendarDays,
       badge: null,
     },
     {
-      id: 'export-data' as NavTab,
-      label: 'Export Data',
+      id: 'monthly-data-purchase-orders' as NavTab,
+      label: 'Monthly Data Purchase Order',
+      icon: CalendarRange,
+      badge: null,
+    },
+    {
+      id: 'export-data-inventory' as NavTab,
+      label: 'Export Data Inventory',
       icon: FileSpreadsheet,
+      badge: null,
+    },
+    {
+      id: 'export-data-purchase-orders' as NavTab,
+      label: 'Export Data Purchase Order',
+      icon: FolderDown,
       badge: null,
     },
     {
@@ -147,7 +150,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <button
               key={item.id}
               onClick={() => {
-                onSelectTab(item.id, item.categoryFilter);
+                onSelectTab(item.id);
                 onCloseMobile();
               }}
               className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs sm:text-sm font-medium transition-all cursor-pointer ${

@@ -235,9 +235,9 @@ app.post('/api/inventory', requireAuth, (req: AuthenticatedRequest, res) => {
     return;
   }
 
-  const validCategories: InventoryCategory[] = ['PC ITEMS', 'NETWORK ITEMS', 'CCTV & TV ITEMS'];
+  const validCategories: InventoryCategory[] = ['PC ITEMS', 'NETWORK ITEMS', 'CCTV & TV ITEMS', 'ROOM ITEMS'];
   if (!validCategories.includes(category)) {
-    res.status(400).json({ error: 'Invalid category. Must be PC ITEMS, NETWORK ITEMS, or CCTV & TV ITEMS' });
+    res.status(400).json({ error: 'Invalid category. Must be PC ITEMS, NETWORK ITEMS, CCTV & TV ITEMS, or ROOM ITEMS' });
     return;
   }
 
@@ -277,7 +277,7 @@ app.put('/api/inventory/:id', requireAuth, (req: AuthenticatedRequest, res) => {
     return;
   }
 
-  const validCategories: InventoryCategory[] = ['PC ITEMS', 'NETWORK ITEMS', 'CCTV & TV ITEMS'];
+  const validCategories: InventoryCategory[] = ['PC ITEMS', 'NETWORK ITEMS', 'CCTV & TV ITEMS', 'ROOM ITEMS'];
   if (category && !validCategories.includes(category)) {
     res.status(400).json({ error: 'Invalid category' });
     return;
@@ -328,10 +328,185 @@ app.delete('/api/inventory/:id', requireAuth, (req: AuthenticatedRequest, res) =
   });
 });
 
-// 11. Activity logs
+// --- PURCHASE ORDER API ENDPOINTS ---
+
+// 11. Purchase Orders: Get all items
+app.get('/api/purchase-orders', requireAuth, (_req, res) => {
+  const items = db.getAllPurchaseOrders();
+  res.json({ purchaseOrders: items });
+});
+
+// 12. Purchase Orders: Get single item
+app.get('/api/purchase-orders/:id', requireAuth, (req, res) => {
+  const { id } = req.params;
+  const item = db.getPurchaseOrderById(id);
+  if (!item) {
+    res.status(404).json({ error: 'Purchase Order not found' });
+    return;
+  }
+  res.json({ purchaseOrder: item });
+});
+
+// 13. Purchase Orders: Create new item
+app.post('/api/purchase-orders', requireAuth, (req: AuthenticatedRequest, res) => {
+  const { itemName, photoUrl, orderDate, arrivalDate, quantity, forUse, remarks, status } = req.body;
+
+  // Validations
+  if (!itemName || !itemName.trim()) {
+    res.status(400).json({ error: 'Item name is required' });
+    return;
+  }
+
+  if (!photoUrl || !photoUrl.trim()) {
+    res.status(400).json({ error: 'Item photo is required' });
+    return;
+  }
+
+  if (!orderDate || !/^\d{4}-\d{2}-\d{2}$/.test(orderDate)) {
+    res.status(400).json({ error: 'Valid order date is required (YYYY-MM-DD)' });
+    return;
+  }
+
+  const parsedQty = parseInt(String(quantity), 10);
+  if (isNaN(parsedQty) || parsedQty <= 0) {
+    res.status(400).json({ error: 'Quantity must be a positive whole number' });
+    return;
+  }
+
+  const validStatuses = ['NOT ARRIVED', 'ARRIVED'];
+  const finalStatus = validStatuses.includes(status) ? status : 'NOT ARRIVED';
+
+  let formattedArrivalDate: string | null = null;
+  if (arrivalDate && typeof arrivalDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(arrivalDate.trim())) {
+    formattedArrivalDate = arrivalDate.trim();
+  }
+
+  const currentUser = req.user?.username || 'SYSTEM';
+
+  const newItem = db.createPurchaseOrder({
+    itemName: itemName.trim(),
+    photoUrl: photoUrl.trim(),
+    orderDate: orderDate.trim(),
+    arrivalDate: formattedArrivalDate,
+    quantity: parsedQty,
+    forUse: forUse && typeof forUse === 'string' && forUse.trim() ? forUse.trim() : null,
+    remarks: remarks && typeof remarks === 'string' && remarks.trim() ? remarks.trim() : null,
+    status: finalStatus,
+    createdBy: currentUser,
+    updatedBy: currentUser,
+  });
+
+  res.status(201).json({
+    success: true,
+    message: 'Purchase Order added successfully.',
+    item: newItem,
+  });
+});
+
+// 14. Purchase Orders: Update item
+app.put('/api/purchase-orders/:id', requireAuth, (req: AuthenticatedRequest, res) => {
+  const { id } = req.params;
+  const { itemName, photoUrl, orderDate, arrivalDate, quantity, forUse, remarks, status } = req.body;
+
+  if (!itemName || !itemName.trim()) {
+    res.status(400).json({ error: 'Item name is required' });
+    return;
+  }
+
+  if (orderDate && !/^\d{4}-\d{2}-\d{2}$/.test(orderDate)) {
+    res.status(400).json({ error: 'Valid order date is required (YYYY-MM-DD)' });
+    return;
+  }
+
+  let parsedQty: number | undefined = undefined;
+  if (quantity !== undefined) {
+    const q = parseInt(String(quantity), 10);
+    if (isNaN(q) || q <= 0) {
+      res.status(400).json({ error: 'Quantity must be a positive whole number' });
+      return;
+    }
+    parsedQty = q;
+  }
+
+  let formattedArrivalDate: string | null | undefined = undefined;
+  if (arrivalDate !== undefined) {
+    if (arrivalDate && typeof arrivalDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(arrivalDate.trim())) {
+      formattedArrivalDate = arrivalDate.trim();
+    } else {
+      formattedArrivalDate = null;
+    }
+  }
+
+  const validStatuses = ['NOT ARRIVED', 'ARRIVED'];
+  let finalStatus: ('NOT ARRIVED' | 'ARRIVED') | undefined = undefined;
+  if (status !== undefined) {
+    if (validStatuses.includes(status)) {
+      finalStatus = status;
+    }
+  }
+
+  const currentUser = req.user?.username || 'SYSTEM';
+
+  const updated = db.updatePurchaseOrder(
+    id,
+    {
+      itemName: itemName.trim(),
+      ...(photoUrl ? { photoUrl: photoUrl.trim() } : {}),
+      ...(orderDate ? { orderDate: orderDate.trim() } : {}),
+      ...(formattedArrivalDate !== undefined ? { arrivalDate: formattedArrivalDate } : {}),
+      ...(parsedQty !== undefined ? { quantity: parsedQty } : {}),
+      ...(forUse !== undefined ? { forUse: forUse && typeof forUse === 'string' && forUse.trim() ? forUse.trim() : null } : {}),
+      ...(remarks !== undefined ? { remarks: remarks && typeof remarks === 'string' && remarks.trim() ? remarks.trim() : null } : {}),
+      ...(finalStatus !== undefined ? { status: finalStatus } : {}),
+    },
+    currentUser
+  );
+
+  if (!updated) {
+    res.status(404).json({ error: 'Purchase Order not found' });
+    return;
+  }
+
+  res.json({
+    success: true,
+    message: 'Purchase Order updated successfully.',
+    item: updated,
+  });
+});
+
+// 15. Purchase Orders: Delete item
+app.delete('/api/purchase-orders/:id', requireAuth, (req: AuthenticatedRequest, res) => {
+  const { id } = req.params;
+  const currentUser = req.user?.username || 'SYSTEM';
+
+  const success = db.deletePurchaseOrder(id, currentUser);
+  if (!success) {
+    res.status(404).json({ error: 'Purchase Order not found' });
+    return;
+  }
+
+  res.json({
+    success: true,
+    message: 'Purchase Order deleted successfully.',
+  });
+});
+
+// 16. Activity logs
 app.get('/api/activity', requireAuth, (req, res) => {
-  const activities = db.getActivities(25);
+  const action = req.query.action as string | undefined;
+  const activities = db.getActivities(50, action);
   res.json({ activities });
+});
+
+// 17. System & Google Sheet Settings
+app.get('/api/settings', requireAuth, (_req, res) => {
+  const settings = db.getSettings();
+  res.json({ settings });
+});
+
+app.post('/api/settings', requireAuth, (req, res) => {
+  const updated = db.updateSettings(req.body);
+  res.json({ success: true, settings: updated });
 });
 
 // --- Server & Vite initialization ---

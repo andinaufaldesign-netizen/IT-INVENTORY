@@ -1,5 +1,44 @@
 [
   {
+    "id": "act-mv27kwo0",
+    "action": "ADD",
+    "itemId": "PO-MV27KWNZ-326",
+    "itemName": "Aruba Instant On AP22 Access Point",
+    "performedBy": "ITMANAGER",
+    "timestamp": "2026-10-10T09:45:27.647Z",
+    "details": "Added new purchase order (Waiting for Arrival)"
+  },
+  {
+    "id": "act-mv0drfcm",
+    "action": "ADD",
+    "itemId": "INV-MV0DRFCM-968",
+    "itemName": "VTech A2210 Cordless Guest Room IP Phone",
+    "category": "ROOM ITEMS",
+    "performedBy": "ITMANAGER",
+    "timestamp": "2026-10-09T03:02:57.142Z",
+    "details": "Added new item (ROOM ITEMS)"
+  },
+  {
+    "id": "act-mv0dglwc",
+    "action": "ADD",
+    "itemId": "INV-MV0DGLWC-980",
+    "itemName": "monitor pc hp",
+    "category": "PC ITEMS",
+    "performedBy": "ittrainee",
+    "timestamp": "2026-10-09T02:54:32.412Z",
+    "details": "Added new item (PC ITEMS)"
+  },
+  {
+    "id": "act-mv0c6w4a",
+    "action": "ADD",
+    "itemId": "INV-MV0C6W4A-769",
+    "itemName": "onity bekas",
+    "category": "NETWORK ITEMS",
+    "performedBy": "ittrainee",
+    "timestamp": "2026-10-09T02:18:59.482Z",
+    "details": "Added new item (NETWORK ITEMS)"
+  },
+  {
     "id": "act-mv0c24mr",
     "action": "ADD",
     "itemId": "INV-MV0C24MR-505",
@@ -20,26 +59,6 @@
     "details": "Added new item (NETWORK ITEMS)"
   },
   {
-    "id": "act-mv09ds22",
-    "action": "DELETE",
-    "itemId": "INV-MV09DDMX-462",
-    "itemName": "TP-Link TL-SG1016D 16-Port Gigabit Switch (Refurbished)",
-    "category": "NETWORK ITEMS",
-    "performedBy": "ITMANAGER",
-    "timestamp": "2026-10-09T01:00:21.962Z",
-    "details": "Removed item from inventory"
-  },
-  {
-    "id": "act-mv09di8j",
-    "action": "EDIT",
-    "itemId": "INV-MV09DDMX-462",
-    "itemName": "TP-Link TL-SG1016D 16-Port Gigabit Switch (Refurbished)",
-    "category": "NETWORK ITEMS",
-    "performedBy": "ITMANAGER",
-    "timestamp": "2026-10-09T01:00:09.235Z",
-    "details": "Updated inventory details"
-  },
-  {
     "id": "act-mv09ddmx",
     "action": "ADD",
     "itemId": "INV-MV09DDMX-462",
@@ -48,15 +67,6 @@
     "performedBy": "ITTRAINEE",
     "timestamp": "2026-10-09T01:00:03.273Z",
     "details": "Added new item (NETWORK ITEMS)"
-  },
-  {
-    "id": "act-1",
-    "action": "EDIT",
-    "itemName": "Dell OptiPlex 7090 Micro Desktop",
-    "category": "PC ITEMS",
-    "performedBy": "ITASSIST",
-    "timestamp": "2026-10-08T14:35:00.000Z",
-    "details": "Repaired power supply and tested RAM"
   },
   {
     "id": "act-2",

@@ -282,6 +282,7 @@ export const AddEditInventoryModal: React.FC<AddEditInventoryModalProps> = ({
                 <option value="PC ITEMS">PC ITEMS</option>
                 <option value="NETWORK ITEMS">NETWORK ITEMS</option>
                 <option value="CCTV & TV ITEMS">CCTV & TV ITEMS</option>
+                <option value="ROOM ITEMS">ROOM ITEMS</option>
               </select>
             </div>
 

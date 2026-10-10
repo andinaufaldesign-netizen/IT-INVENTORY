@@ -136,6 +136,8 @@ export const MonthlyDataView: React.FC<MonthlyDataViewProps> = ({
         return 'bg-emerald-50 text-emerald-700 border-emerald-200';
       case 'CCTV & TV ITEMS':
         return 'bg-purple-50 text-purple-700 border-purple-200';
+      case 'ROOM ITEMS':
+        return 'bg-amber-50 text-amber-700 border-amber-200';
       default:
         return 'bg-slate-50 text-slate-700 border-slate-200';
     }
@@ -149,10 +151,10 @@ export const MonthlyDataView: React.FC<MonthlyDataViewProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-              MONTHLY DATA
+              MONTHLY DATA INVENTORY
             </h2>
             <p className="text-xs sm:text-sm text-slate-500">
-              Inventory categorization by equipment repair date (dateRepaired)
+              Pengelompokan barang inventaris IT berdasarkan tanggal dibereskan (dateRepaired)
             </p>
           </div>
 
@@ -294,6 +296,7 @@ export const MonthlyDataView: React.FC<MonthlyDataViewProps> = ({
             <option value="PC ITEMS">PC ITEMS</option>
             <option value="NETWORK ITEMS">NETWORK ITEMS</option>
             <option value="CCTV & TV ITEMS">CCTV & TV ITEMS</option>
+            <option value="ROOM ITEMS">ROOM ITEMS</option>
           </select>
 
           <button

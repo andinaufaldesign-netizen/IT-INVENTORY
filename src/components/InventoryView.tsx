@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   InventoryItem,
   InventoryCategory,
@@ -50,6 +50,13 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
   // Search & Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<InventoryCategory | 'ALL'>(initialCategory);
+
+  // Sync category filter when initialCategory prop changes
+  useEffect(() => {
+    setCategoryFilter(initialCategory);
+    setCurrentPage(1);
+  }, [initialCategory]);
+
   const [monthFilter, setMonthFilter] = useState<string>('ALL'); // 'YYYY-MM'
   const [userFilter, setUserFilter] = useState<string>('ALL');
   const [dateFrom, setDateFrom] = useState('');
@@ -226,6 +233,8 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
         return 'bg-emerald-50 text-emerald-700 border-emerald-200';
       case 'CCTV & TV ITEMS':
         return 'bg-purple-50 text-purple-700 border-purple-200';
+      case 'ROOM ITEMS':
+        return 'bg-amber-50 text-amber-700 border-amber-200';
       default:
         return 'bg-slate-50 text-slate-700 border-slate-200';
     }
@@ -304,6 +313,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
               <option value="PC ITEMS">PC ITEMS</option>
               <option value="NETWORK ITEMS">NETWORK ITEMS</option>
               <option value="CCTV & TV ITEMS">CCTV & TV ITEMS</option>
+              <option value="ROOM ITEMS">ROOM ITEMS</option>
             </select>
           </div>
 

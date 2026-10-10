@@ -1,4 +1,4 @@
-import { User, UserManagementItem, InventoryItem, ActivityLog } from '../types';
+import { User, UserManagementItem, InventoryItem, ActivityLog, PurchaseOrderItem, AppSettings } from '../types';
 
 const TOKEN_KEY = 'hotel_it_inventory_token';
 const USER_KEY = 'hotel_it_inventory_user';
@@ -154,6 +154,55 @@ export async function deleteInventoryApi(id: string): Promise<void> {
   });
 }
 
+// Purchase Orders API
+export async function fetchPurchaseOrdersApi(): Promise<PurchaseOrderItem[]> {
+  const data = await apiFetch('/api/purchase-orders');
+  return data.purchaseOrders;
+}
+
+export async function createPurchaseOrderApi(item: {
+  itemName: string;
+  photoUrl: string;
+  orderDate: string;
+  arrivalDate?: string | null;
+  quantity: number;
+  forUse?: string | null;
+  remarks?: string | null;
+  status: 'NOT ARRIVED' | 'ARRIVED';
+}): Promise<PurchaseOrderItem> {
+  const data = await apiFetch('/api/purchase-orders', {
+    method: 'POST',
+    body: JSON.stringify(item),
+  });
+  return data.item;
+}
+
+export async function updatePurchaseOrderApi(
+  id: string,
+  item: {
+    itemName: string;
+    photoUrl?: string;
+    orderDate?: string;
+    arrivalDate?: string | null;
+    quantity?: number;
+    forUse?: string | null;
+    remarks?: string | null;
+    status?: 'NOT ARRIVED' | 'ARRIVED';
+  }
+): Promise<PurchaseOrderItem> {
+  const data = await apiFetch(`/api/purchase-orders/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(item),
+  });
+  return data.item;
+}
+
+export async function deletePurchaseOrderApi(id: string): Promise<void> {
+  await apiFetch(`/api/purchase-orders/${id}`, {
+    method: 'DELETE',
+  });
+}
+
 // Upload Photo API
 export async function uploadPhotoApi(dataUrl: string, filename = 'photo.jpg'): Promise<string> {
   const data = await apiFetch('/api/upload', {
@@ -163,9 +212,10 @@ export async function uploadPhotoApi(dataUrl: string, filename = 'photo.jpg'): P
   return data.url;
 }
 
-// Activity Logs API
-export async function fetchActivityApi(): Promise<ActivityLog[]> {
-  const data = await apiFetch('/api/activity');
+// Activity Logs API (Only 'ADD' items per requirement)
+export async function fetchActivityApi(action?: string): Promise<ActivityLog[]> {
+  const url = action ? `/api/activity?action=${encodeURIComponent(action)}` : '/api/activity?action=ADD';
+  const data = await apiFetch(url);
   return data.activities;
 }
 
@@ -214,4 +264,18 @@ export function compressImage(file: File, maxWidth = 900, maxHeight = 900, quali
     };
     reader.readAsDataURL(file);
   });
+}
+
+// Settings API
+export async function fetchSettingsApi(): Promise<AppSettings> {
+  const data = await apiFetch('/api/settings');
+  return data.settings;
+}
+
+export async function updateSettingsApi(settings: Partial<AppSettings>): Promise<AppSettings> {
+  const data = await apiFetch('/api/settings', {
+    method: 'POST',
+    body: JSON.stringify(settings),
+  });
+  return data.settings;
 }

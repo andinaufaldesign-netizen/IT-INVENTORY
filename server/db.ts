@@ -13,7 +13,7 @@ export interface UserRecord {
   updatedAt: string;
 }
 
-export type InventoryCategory = 'PC ITEMS' | 'NETWORK ITEMS' | 'CCTV & TV ITEMS';
+export type InventoryCategory = 'PC ITEMS' | 'NETWORK ITEMS' | 'CCTV & TV ITEMS' | 'ROOM ITEMS';
 
 export interface InventoryRecord {
   id: string;
@@ -40,11 +40,47 @@ export interface ActivityRecord {
   details?: string;
 }
 
+export type PurchaseOrderStatus = 'NOT ARRIVED' | 'ARRIVED';
+
+export interface PurchaseOrderRecord {
+  id: string;
+  itemName: string;
+  photoUrl: string;
+  orderDate: string; // YYYY-MM-DD
+  arrivalDate: string | null; // YYYY-MM-DD or null
+  quantity: number;
+  forUse: string | null;
+  remarks: string | null;
+  status: PurchaseOrderStatus;
+  createdAt: string;
+  createdBy: string;
+  updatedAt: string;
+  updatedBy: string;
+}
+
 const DATA_DIR = path.resolve(process.cwd(), 'data');
 const UPLOADS_DIR = path.resolve(DATA_DIR, 'uploads');
 const USERS_FILE = path.resolve(DATA_DIR, 'users.json');
 const INVENTORY_FILE = path.resolve(DATA_DIR, 'inventory.json');
+const PURCHASE_ORDERS_FILE = path.resolve(DATA_DIR, 'purchase_orders.json');
 const ACTIVITY_FILE = path.resolve(DATA_DIR, 'activity.json');
+const SETTINGS_FILE = path.resolve(DATA_DIR, 'settings.json');
+
+export interface AppSettings {
+  googleSheetUrl: string;
+  spreadsheetId: string;
+  spreadsheetTitle: string;
+  lastSyncedAt: string | null;
+  autoSyncEnabled: boolean;
+}
+
+const DEFAULT_SETTINGS: AppSettings = {
+  googleSheetUrl: '',
+  spreadsheetId: '',
+  spreadsheetTitle: 'DATABASE APLIKASI IT',
+  lastSyncedAt: null,
+  autoSyncEnabled: true,
+};
 
 // Secret code for User Management: INNRATTAN.BJM
 export const SECRET_CODE = 'INNRATTAN.BJM';
@@ -192,6 +228,19 @@ function initInventory(): InventoryRecord[] {
       updatedAt: '2026-07-28T08:30:00.000Z',
       updatedBy: 'ITASSIST',
     },
+    {
+      id: 'INV-2026-007',
+      itemName: 'Onity RFID Electronic Door Lock Reader & Encoder',
+      quantity: 6,
+      photoUrl: 'https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=600&q=80',
+      category: 'ROOM ITEMS',
+      dateRepaired: '2026-09-18',
+      serialNumber: 'ONT-RFID-5521',
+      createdAt: '2026-09-18T10:30:00.000Z',
+      createdBy: 'ITMANAGER',
+      updatedAt: '2026-09-18T10:30:00.000Z',
+      updatedBy: 'ITMANAGER',
+    },
   ];
 }
 
@@ -199,12 +248,12 @@ function initActivity(): ActivityRecord[] {
   return [
     {
       id: 'act-1',
-      action: 'EDIT',
+      action: 'ADD',
       itemName: 'Dell OptiPlex 7090 Micro Desktop',
       category: 'PC ITEMS',
-      performedBy: 'ITASSIST',
-      timestamp: '2026-10-08T14:35:00.000Z',
-      details: 'Repaired power supply and tested RAM',
+      performedBy: 'ITMANAGER',
+      timestamp: '2026-10-05T07:30:00.000Z',
+      details: 'Initial setup and added to inventory',
     },
     {
       id: 'act-2',
@@ -245,10 +294,108 @@ function initActivity(): ActivityRecord[] {
   ];
 }
 
+// Initial seed purchase orders
+function initPurchaseOrders(): PurchaseOrderRecord[] {
+  return [
+    {
+      id: 'PO-2026-001',
+      itemName: 'Dell OptiPlex 7000 Tower Desktop Workstation',
+      photoUrl: 'https://images.unsplash.com/photo-1587831990711-23ca6441447b?auto=format&fit=crop&w=600&q=80',
+      orderDate: '2026-08-10',
+      arrivalDate: '2026-08-22',
+      quantity: 5,
+      forUse: 'Front Office & Reservations',
+      remarks: 'Workstation upgrade for main reception and cashier terminals',
+      status: 'ARRIVED',
+      createdAt: '2026-08-10T08:30:00.000Z',
+      createdBy: 'ITMANAGER',
+      updatedAt: '2026-08-22T14:15:00.000Z',
+      updatedBy: 'ITASSIST',
+    },
+    {
+      id: 'PO-2026-002',
+      itemName: 'TP-Link Omada TL-SG3428MP 24-Port PoE+ Switch',
+      photoUrl: 'https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&w=600&q=80',
+      orderDate: '2026-08-18',
+      arrivalDate: '2026-08-25',
+      quantity: 2,
+      forUse: 'Server Room Floor 3',
+      remarks: 'Dedicated Gigabit PoE power for guest floor corridor APs',
+      status: 'ARRIVED',
+      createdAt: '2026-08-18T09:15:00.000Z',
+      createdBy: 'ITASSIST',
+      updatedAt: '2026-08-25T11:20:00.000Z',
+      updatedBy: 'ITASSIST',
+    },
+    {
+      id: 'PO-2026-003',
+      itemName: 'Samsung 55-inch Crystal 4K Hospitality Smart TV',
+      photoUrl: 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?auto=format&fit=crop&w=600&q=80',
+      orderDate: '2026-09-05',
+      arrivalDate: '2026-09-15',
+      quantity: 8,
+      forUse: 'Executive Deluxe Suites Floor 5',
+      remarks: 'Phase 1 replacement for upgraded premium suite rooms',
+      status: 'ARRIVED',
+      createdAt: '2026-09-05T10:00:00.000Z',
+      createdBy: 'ITTRAINEE',
+      updatedAt: '2026-09-15T16:30:00.000Z',
+      updatedBy: 'ITTRAINEE',
+    },
+    {
+      id: 'PO-2026-004',
+      itemName: 'Hikvision DS-2CD2043G2-I Outdoor Infrared Bullet Cameras',
+      photoUrl: 'https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&w=600&q=80',
+      orderDate: '2026-09-28',
+      arrivalDate: null,
+      quantity: 12,
+      forUse: 'Basement Parking & Loading Dock Area',
+      remarks: 'Waiting for vendor official shipment batch from regional distributor',
+      status: 'NOT ARRIVED',
+      createdAt: '2026-09-28T13:40:00.000Z',
+      createdBy: 'ITMANAGER',
+      updatedAt: '2026-09-28T13:40:00.000Z',
+      updatedBy: 'ITMANAGER',
+    },
+    {
+      id: 'PO-2026-005',
+      itemName: 'VTech VSP600 Cordless IP DECT Telephone Sets',
+      photoUrl: 'https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=600&q=80',
+      orderDate: '2026-10-04',
+      arrivalDate: '2026-10-18',
+      quantity: 6,
+      forUse: 'Housekeeping & Banquet Captains',
+      remarks: 'Expedited air courier shipment scheduled for mid-October',
+      status: 'NOT ARRIVED',
+      createdAt: '2026-10-04T11:20:00.000Z',
+      createdBy: 'ITASSIST',
+      updatedAt: '2026-10-04T11:20:00.000Z',
+      updatedBy: 'ITASSIST',
+    },
+    {
+      id: 'PO-2026-006',
+      itemName: 'Ubiquiti UniFi U6-Pro Ceiling WiFi 6 Access Points',
+      photoUrl: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=600&q=80',
+      orderDate: '2026-10-06',
+      arrivalDate: null,
+      quantity: 10,
+      forUse: 'Grand Ballroom & Meeting Rooms Foyer',
+      remarks: 'Awaiting mounting bracket accessories bundle confirmation',
+      status: 'NOT ARRIVED',
+      createdAt: '2026-10-06T15:00:00.000Z',
+      createdBy: 'ITTRAINEE',
+      updatedAt: '2026-10-06T15:00:00.000Z',
+      updatedBy: 'ITTRAINEE',
+    },
+  ];
+}
+
 export class Database {
   private users: UserRecord[] = [];
   private inventory: InventoryRecord[] = [];
+  private purchaseOrders: PurchaseOrderRecord[] = [];
   private activities: ActivityRecord[] = [];
+  private settings: AppSettings = { ...DEFAULT_SETTINGS };
 
   constructor() {
     ensureDirectories();
@@ -290,17 +437,50 @@ export class Database {
       }
     }
 
-    // Load Activity
+    // Load Purchase Orders
+    if (!fs.existsSync(PURCHASE_ORDERS_FILE)) {
+      this.purchaseOrders = initPurchaseOrders();
+      this.savePurchaseOrders();
+    } else {
+      try {
+        const raw = fs.readFileSync(PURCHASE_ORDERS_FILE, 'utf-8');
+        const parsed = JSON.parse(raw);
+        this.purchaseOrders = Array.isArray(parsed) ? parsed : initPurchaseOrders();
+      } catch {
+        this.purchaseOrders = initPurchaseOrders();
+        this.savePurchaseOrders();
+      }
+    }
+
+    // Load Activity (Only ADD per requirement)
     if (!fs.existsSync(ACTIVITY_FILE)) {
       this.activities = initActivity();
       this.saveActivity();
     } else {
       try {
         const raw = fs.readFileSync(ACTIVITY_FILE, 'utf-8');
-        this.activities = JSON.parse(raw);
+        const parsed = JSON.parse(raw);
+        this.activities = Array.isArray(parsed)
+          ? parsed.filter((a: any) => a.action === 'ADD')
+          : initActivity();
+        this.saveActivity();
       } catch {
         this.activities = initActivity();
         this.saveActivity();
+      }
+    }
+
+    // Load Settings
+    if (!fs.existsSync(SETTINGS_FILE)) {
+      this.settings = { ...DEFAULT_SETTINGS };
+      this.saveSettings();
+    } else {
+      try {
+        const raw = fs.readFileSync(SETTINGS_FILE, 'utf-8');
+        this.settings = { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
+      } catch {
+        this.settings = { ...DEFAULT_SETTINGS };
+        this.saveSettings();
       }
     }
   }
@@ -313,8 +493,16 @@ export class Database {
     fs.writeFileSync(INVENTORY_FILE, JSON.stringify(this.inventory, null, 2), 'utf-8');
   }
 
+  private savePurchaseOrders() {
+    fs.writeFileSync(PURCHASE_ORDERS_FILE, JSON.stringify(this.purchaseOrders, null, 2), 'utf-8');
+  }
+
   private saveActivity() {
     fs.writeFileSync(ACTIVITY_FILE, JSON.stringify(this.activities, null, 2), 'utf-8');
+  }
+
+  private saveSettings() {
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(this.settings, null, 2), 'utf-8');
   }
 
   // --- Users Methods ---
@@ -406,16 +594,6 @@ export class Database {
     this.inventory.unshift(updated);
     this.saveInventory();
 
-    this.logActivity({
-      action: 'EDIT',
-      itemId: updated.id,
-      itemName: updated.itemName,
-      category: updated.category,
-      performedBy: updatedBy,
-      timestamp: now,
-      details: `Updated inventory details`,
-    });
-
     return updated;
   }
 
@@ -423,18 +601,98 @@ export class Database {
     const idx = this.inventory.findIndex((i) => i.id === id);
     if (idx === -1) return false;
 
-    const item = this.inventory[idx];
     this.inventory.splice(idx, 1);
     this.saveInventory();
+
+    return true;
+  }
+
+  // --- Purchase Order Methods ---
+  getAllPurchaseOrders(): PurchaseOrderRecord[] {
+    return this.purchaseOrders;
+  }
+
+  getPurchaseOrderById(id: string): PurchaseOrderRecord | undefined {
+    return this.purchaseOrders.find((p) => p.id === id);
+  }
+
+  createPurchaseOrder(item: Omit<PurchaseOrderRecord, 'id' | 'createdAt' | 'updatedAt'>): PurchaseOrderRecord {
+    const now = new Date().toISOString();
+    const id = `PO-${Date.now().toString(36).toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`;
+
+    const record: PurchaseOrderRecord = {
+      ...item,
+      id,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    // Prepend so newest is at the top
+    this.purchaseOrders.unshift(record);
+    this.savePurchaseOrders();
+
+    this.logActivity({
+      action: 'ADD',
+      itemId: record.id,
+      itemName: record.itemName,
+      performedBy: record.createdBy,
+      timestamp: now,
+      details: `Added new purchase order (${record.status === 'ARRIVED' ? 'Arrived' : 'Waiting for Arrival'})`,
+    });
+
+    return record;
+  }
+
+  updatePurchaseOrder(
+    id: string,
+    updates: Partial<Omit<PurchaseOrderRecord, 'id' | 'createdAt' | 'createdBy'>>,
+    updatedBy: string
+  ): PurchaseOrderRecord | null {
+    const idx = this.purchaseOrders.findIndex((p) => p.id === id);
+    if (idx === -1) return null;
+
+    const existing = this.purchaseOrders[idx];
+    const now = new Date().toISOString();
+
+    const updated: PurchaseOrderRecord = {
+      ...existing,
+      ...updates,
+      updatedAt: now,
+      updatedBy,
+    };
+
+    // Move to top of list as recently edited
+    this.purchaseOrders.splice(idx, 1);
+    this.purchaseOrders.unshift(updated);
+    this.savePurchaseOrders();
+
+    this.logActivity({
+      action: 'EDIT',
+      itemId: updated.id,
+      itemName: updated.itemName,
+      performedBy: updatedBy,
+      timestamp: now,
+      details: `Updated purchase order details (Status: ${updated.status === 'ARRIVED' ? 'Arrived' : 'Waiting for Arrival'})`,
+    });
+
+    return updated;
+  }
+
+  deletePurchaseOrder(id: string, deletedBy: string): boolean {
+    const idx = this.purchaseOrders.findIndex((p) => p.id === id);
+    if (idx === -1) return false;
+
+    const item = this.purchaseOrders[idx];
+    this.purchaseOrders.splice(idx, 1);
+    this.savePurchaseOrders();
 
     this.logActivity({
       action: 'DELETE',
       itemId: id,
       itemName: item.itemName,
-      category: item.category,
       performedBy: deletedBy,
       timestamp: new Date().toISOString(),
-      details: `Removed item from inventory`,
+      details: `Removed purchase order`,
     });
 
     return true;
@@ -442,6 +700,7 @@ export class Database {
 
   // --- Activity Methods ---
   private logActivity(activity: Omit<ActivityRecord, 'id'>) {
+    if (activity.action !== 'ADD') return;
     const id = `act-${Date.now().toString(36)}`;
     this.activities.unshift({
       id,
@@ -454,8 +713,24 @@ export class Database {
     this.saveActivity();
   }
 
-  getActivities(limit = 20): ActivityRecord[] {
-    return this.activities.slice(0, limit);
+  getActivities(limit = 20, _action?: string): ActivityRecord[] {
+    // Only return ADD per requirement: "recent activity jangan masukkan delete dan edited. hanya tampilkan added"
+    const list = this.activities.filter((a) => a.action === 'ADD');
+    return list.slice(0, limit);
+  }
+
+  // --- Settings Methods ---
+  getSettings(): AppSettings {
+    return { ...this.settings };
+  }
+
+  updateSettings(updates: Partial<AppSettings>): AppSettings {
+    this.settings = {
+      ...this.settings,
+      ...updates,
+    };
+    this.saveSettings();
+    return { ...this.settings };
   }
 }
 

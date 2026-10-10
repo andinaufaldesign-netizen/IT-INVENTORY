@@ -37,13 +37,6 @@ export const LoginView: React.FC<LoginViewProps> = ({
     }
   };
 
-  // Helper quick filler for testing convenience
-  const handleQuickFill = (u: string, p: string) => {
-    setUsername(u);
-    setPassword(p);
-    setError(null);
-  };
-
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col justify-center items-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
       {/* Background ambient lighting */}
@@ -150,40 +143,6 @@ export const LoginView: React.FC<LoginViewProps> = ({
             >
               <KeyRound className="w-3.5 h-3.5" />
               <span>EDIT USER & PASSWORD</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Quick Seed Accounts Guide for tester */}
-        <div className="bg-slate-900/50 border border-slate-800/80 rounded-xl p-4 text-xs text-slate-400 space-y-2">
-          <div className="font-semibold text-slate-300 flex items-center justify-between">
-            <span>Authorized Initial Seed Accounts:</span>
-            <span className="text-[10px] text-slate-500 font-mono">click to fill</span>
-          </div>
-          <div className="grid grid-cols-3 gap-2">
-            <button
-              type="button"
-              onClick={() => handleQuickFill('ITMANAGER', 'syah')}
-              className="p-2 bg-slate-950/80 hover:bg-slate-800 border border-slate-800 rounded-lg text-left transition-colors cursor-pointer"
-            >
-              <div className="font-bold text-white font-mono">ITMANAGER</div>
-              <div className="text-[10px] text-slate-400">pwd: syah</div>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickFill('ITASSIST', 'ihsan')}
-              className="p-2 bg-slate-950/80 hover:bg-slate-800 border border-slate-800 rounded-lg text-left transition-colors cursor-pointer"
-            >
-              <div className="font-bold text-white font-mono">ITASSIST</div>
-              <div className="text-[10px] text-slate-400">pwd: ihsan</div>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickFill('ITTRAINEE', 'andi')}
-              className="p-2 bg-slate-950/80 hover:bg-slate-800 border border-slate-800 rounded-lg text-left transition-colors cursor-pointer"
-            >
-              <div className="font-bold text-white font-mono">ITTRAINEE</div>
-              <div className="text-[10px] text-slate-400">pwd: andi</div>
             </button>
           </div>
         </div>

@@ -4,6 +4,9 @@ import {
   InventoryItem,
   ActivityLog,
   InventoryCategory,
+  PurchaseOrderItem,
+  PurchaseOrderStatus,
+  AppSettings,
 } from './types';
 import {
   getStoredToken,
@@ -13,8 +16,15 @@ import {
   fetchInventoryApi,
   fetchActivityApi,
   deleteInventoryApi,
+  fetchPurchaseOrdersApi,
+  updatePurchaseOrderApi,
+  deletePurchaseOrderApi,
+  fetchSettingsApi,
+  updateSettingsApi,
 } from './services/api';
-import { exportInventoryToExcel } from './services/excelExport';
+import { getGoogleAccessToken } from './services/googleAuth';
+import { syncAllToGoogleSheet } from './services/googleSheets';
+import { exportInventoryToExcel, exportPurchaseOrdersToExcel } from './services/excelExport';
 import { Header } from './components/Header';
 import { Sidebar, NavTab } from './components/Sidebar';
 import { LoginView } from './components/LoginView';
@@ -22,11 +32,17 @@ import { SecretCodeModal } from './components/SecretCodeModal';
 import { EditUsersView } from './components/EditUsersView';
 import { DashboardView } from './components/DashboardView';
 import { InventoryView } from './components/InventoryView';
+import { PurchaseOrdersView } from './components/PurchaseOrdersView';
 import { MonthlyDataView } from './components/MonthlyDataView';
+import { MonthlyDataPOView } from './components/MonthlyDataPOView';
 import { ExportDataView } from './components/ExportDataView';
+import { ExportDataPOView } from './components/ExportDataPOView';
 import { SettingsView } from './components/SettingsView';
 import { AddEditInventoryModal } from './components/AddEditInventoryModal';
 import { InventoryDetailModal } from './components/InventoryDetailModal';
+import { AddEditPOModal } from './components/AddEditPOModal';
+import { PODetailModal } from './components/PODetailModal';
+import { POStatusModal } from './components/POStatusModal';
 import { DeleteConfirmModal } from './components/DeleteConfirmModal';
 import { ImageViewerModal } from './components/ImageViewerModal';
 import { ToastContainer, ToastMessage } from './components/Toast';
@@ -44,21 +60,37 @@ export default function App() {
   // Navigation tab
   const [currentTab, setCurrentTab] = useState<NavTab>('dashboard');
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<InventoryCategory | 'ALL'>('ALL');
+  const [activePOStatusFilter, setActivePOStatusFilter] = useState<PurchaseOrderStatus | 'ALL'>('ALL');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Data state
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrderItem[]>([]);
   const [activities, setActivities] = useState<ActivityLog[]>([]);
+  const [settings, setSettings] = useState<AppSettings>({
+    googleSheetUrl: '',
+    spreadsheetId: '',
+    spreadsheetTitle: 'DATABASE APLIKASI IT',
+    lastSyncedAt: null,
+    autoSyncEnabled: true,
+  });
   const [isLoadingData, setIsLoadingData] = useState(false);
 
-  // Modals state
+  // Inventory Modals state
   const [isAddEditModalOpen, setIsAddEditModalOpen] = useState(false);
   const [itemToEdit, setItemToEdit] = useState<InventoryItem | null>(null);
   const [defaultCategoryForAdd, setDefaultCategoryForAdd] = useState<InventoryCategory>('PC ITEMS');
-
   const [detailItem, setDetailItem] = useState<InventoryItem | null>(null);
   const [itemToDelete, setItemToDelete] = useState<InventoryItem | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Purchase Order Modals state
+  const [isAddEditPOModalOpen, setIsAddEditPOModalOpen] = useState(false);
+  const [poItemToEdit, setPoItemToEdit] = useState<PurchaseOrderItem | null>(null);
+  const [detailPOItem, setDetailPOItem] = useState<PurchaseOrderItem | null>(null);
+  const [poItemToDelete, setPoItemToDelete] = useState<PurchaseOrderItem | null>(null);
+  const [isDeletingPO, setIsDeletingPO] = useState(false);
+  const [poStatusModalType, setPoStatusModalType] = useState<PurchaseOrderStatus | null>(null);
 
   // Image viewer lightbox state
   const [viewPhotoUrl, setViewPhotoUrl] = useState<string | null>(null);
@@ -103,20 +135,26 @@ export default function App() {
     checkAuth();
   }, []);
 
-  // Fetch inventory & activities when authenticated
-  const loadInventoryAndActivities = useCallback(async () => {
+  // Fetch inventory, POs, settings & activities when authenticated
+  const loadAllData = useCallback(async () => {
     if (!currentUser) return;
     setIsLoadingData(true);
     try {
-      const [invData, actData] = await Promise.all([
+      const [invData, actData, poData, settingsData] = await Promise.all([
         fetchInventoryApi(),
         fetchActivityApi(),
+        fetchPurchaseOrdersApi(),
+        fetchSettingsApi().catch(() => null),
       ]);
       setInventory(invData);
       setActivities(actData);
+      setPurchaseOrders(poData);
+      if (settingsData) {
+        setSettings(settingsData);
+      }
     } catch (err: any) {
       console.error('Failed loading data:', err);
-      showToast('Could not fetch inventory from server.', 'error');
+      showToast('Could not fetch data from server.', 'error');
     } finally {
       setIsLoadingData(false);
     }
@@ -124,9 +162,9 @@ export default function App() {
 
   useEffect(() => {
     if (currentUser) {
-      loadInventoryAndActivities();
+      loadAllData();
     }
-  }, [currentUser, loadInventoryAndActivities]);
+  }, [currentUser, loadAllData]);
 
   // Auth actions
   const handleLoginSuccess = (user: User) => {
@@ -179,6 +217,40 @@ export default function App() {
       setActiveCategoryFilter(categoryFilter);
     } else if (tab === 'inventory') {
       setActiveCategoryFilter('ALL');
+    } else if (tab === 'purchase-orders') {
+      setActivePOStatusFilter('ALL');
+    }
+  };
+
+  const handleUpdateSettings = async (updates: Partial<AppSettings>) => {
+    try {
+      const updated = await updateSettingsApi(updates);
+      setSettings(updated);
+    } catch (err: any) {
+      console.error('Failed to update settings:', err);
+      showToast(err?.message || 'Gagal memperbarui pengaturan.', 'error');
+    }
+  };
+
+  const triggerBackgroundSync = async (
+    customInv?: InventoryItem[],
+    customPOs?: PurchaseOrderItem[]
+  ) => {
+    if (!settings.autoSyncEnabled || !settings.spreadsheetId) return;
+    const token = getGoogleAccessToken();
+    if (!token) return;
+    try {
+      await syncAllToGoogleSheet(
+        settings.spreadsheetId,
+        token,
+        customInv || inventory,
+        customPOs || purchaseOrders
+      );
+      const nowStr = new Date().toISOString();
+      await updateSettingsApi({ lastSyncedAt: nowStr });
+      setSettings((prev) => ({ ...prev, lastSyncedAt: nowStr }));
+    } catch (e) {
+      console.warn('Background Google Sheet sync:', e);
     }
   };
 
@@ -187,10 +259,13 @@ export default function App() {
     pc: inventory.filter((i) => i.category === 'PC ITEMS').length,
     network: inventory.filter((i) => i.category === 'NETWORK ITEMS').length,
     cctv: inventory.filter((i) => i.category === 'CCTV & TV ITEMS').length,
+    room: inventory.filter((i) => i.category === 'ROOM ITEMS').length,
     total: inventory.length,
   };
 
-  // Add / Edit Modal handlers
+  const pendingPOCount = purchaseOrders.filter((p) => p.status === 'NOT ARRIVED').length;
+
+  // Inventory Add / Edit Modal handlers
   const handleOpenAddModal = (defaultCategory?: InventoryCategory) => {
     setItemToEdit(null);
     setDefaultCategoryForAdd(defaultCategory || 'PC ITEMS');
@@ -205,10 +280,11 @@ export default function App() {
 
   const handleSavedInventory = (item: InventoryItem, isEdit: boolean) => {
     showToast(isEdit ? 'Inventory updated successfully.' : 'Inventory added successfully.', 'success');
-    loadInventoryAndActivities();
+    loadAllData();
+    setTimeout(() => triggerBackgroundSync(), 1000);
   };
 
-  // Delete modal handlers
+  // Inventory Delete modal handlers
   const handleRequestDelete = (item: InventoryItem) => {
     setItemToDelete(item);
     setDetailItem(null);
@@ -221,11 +297,78 @@ export default function App() {
       await deleteInventoryApi(itemToDelete.id);
       showToast('Inventory item deleted successfully.', 'success');
       setItemToDelete(null);
-      loadInventoryAndActivities();
+      loadAllData();
+      setTimeout(() => triggerBackgroundSync(), 1000);
     } catch (err: any) {
       showToast(err?.message || 'Failed to delete item.', 'error');
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  // Purchase Order Handlers
+  const handleOpenAddPOModal = () => {
+    setPoItemToEdit(null);
+    setIsAddEditPOModalOpen(true);
+  };
+
+  const handleOpenEditPOModal = (item: PurchaseOrderItem) => {
+    setPoItemToEdit(item);
+    setIsAddEditPOModalOpen(true);
+    setDetailPOItem(null);
+  };
+
+  const handleSavedPO = (item: PurchaseOrderItem, isEdit: boolean) => {
+    showToast(isEdit ? 'Purchase Order berhasil diperbarui.' : 'Purchase Order baru berhasil ditambahkan.', 'success');
+    loadAllData();
+    setTimeout(() => triggerBackgroundSync(), 1000);
+  };
+
+  const handleRequestDeletePO = (item: PurchaseOrderItem) => {
+    setPoItemToDelete(item);
+    setDetailPOItem(null);
+  };
+
+  const handleConfirmDeletePO = async () => {
+    if (!poItemToDelete) return;
+    setIsDeletingPO(true);
+    try {
+      await deletePurchaseOrderApi(poItemToDelete.id);
+      showToast('Purchase Order berhasil dihapus.', 'success');
+      setPoItemToDelete(null);
+      loadAllData();
+      setTimeout(() => triggerBackgroundSync(), 1000);
+    } catch (err: any) {
+      showToast(err?.message || 'Gagal menghapus Purchase Order.', 'error');
+    } finally {
+      setIsDeletingPO(false);
+    }
+  };
+
+  const handleTogglePOStatus = async (item: PurchaseOrderItem) => {
+    const newStatus: PurchaseOrderStatus = item.status === 'ARRIVED' ? 'NOT ARRIVED' : 'ARRIVED';
+    const today = new Date().toISOString().split('T')[0];
+    const newArrivalDate = newStatus === 'ARRIVED' ? (item.arrivalDate || today) : null;
+
+    try {
+      const updated = await updatePurchaseOrderApi(item.id, {
+        itemName: item.itemName,
+        status: newStatus,
+        arrivalDate: newArrivalDate,
+      });
+      showToast(
+        newStatus === 'ARRIVED'
+          ? `Status "${item.itemName}" ditandai: SUDAH DATANG.`
+          : `Status "${item.itemName}" diubah ke: BELUM DATANG.`,
+        'success'
+      );
+      if (detailPOItem && detailPOItem.id === item.id) {
+        setDetailPOItem(updated);
+      }
+      loadAllData();
+      setTimeout(() => triggerBackgroundSync(), 1000);
+    } catch (err: any) {
+      showToast(err?.message || 'Gagal mengubah status Purchase Order.', 'error');
     }
   };
 
@@ -235,7 +378,7 @@ export default function App() {
     setViewPhotoTitle(title);
   };
 
-  // Excel exports
+  // Excel exports - Inventory
   const handleExportMonth = async (monthStr: string, monthLabel: string, items: InventoryItem[]) => {
     try {
       const fileName = `HOTEL_IT_INVENTORY_${monthLabel}_2026.xlsx`;
@@ -257,6 +400,31 @@ export default function App() {
       showToast(`Exported: ${fileName}`, 'success');
     } catch (err: any) {
       showToast(err?.message || 'Export failed.', 'error');
+    }
+  };
+
+  // Excel exports - Purchase Orders
+  const handleExportPOExcel = async (items: PurchaseOrderItem[]) => {
+    try {
+      const fileName = `HOTEL_IT_PURCHASE_ORDERS_${new Date().toISOString().split('T')[0]}.xlsx`;
+      const title = `HOTEL IT PURCHASE ORDER REPORT (${items.length} ITEMS)`;
+      showToast('Menyiapkan file Excel Purchase Order...', 'info');
+      await exportPurchaseOrdersToExcel(items, fileName, title, 'PURCHASE_ORDERS');
+      showToast(`Berhasil diekspor: ${fileName}`, 'success');
+    } catch (err: any) {
+      showToast(err?.message || 'Gagal mengekspor data Purchase Order.', 'error');
+    }
+  };
+
+  const handleExportMonthPO = async (monthStr: string, monthLabel: string, items: PurchaseOrderItem[]) => {
+    try {
+      const fileName = `HOTEL_IT_PO_${monthLabel.replace(/\s+/g, '_')}.xlsx`;
+      const title = `HOTEL IT PURCHASE ORDER - ${monthLabel}`;
+      showToast('Menyiapkan file Excel bulanan PO...', 'info');
+      await exportPurchaseOrdersToExcel(items, fileName, title, 'PO_BULANAN');
+      showToast(`Berhasil diekspor: ${fileName}`, 'success');
+    } catch (err: any) {
+      showToast(err?.message || 'Gagal mengekspor data Purchase Order.', 'error');
     }
   };
 
@@ -320,7 +488,7 @@ export default function App() {
   // MAIN LOGGED-IN APPLICATION LAYOUT
   return (
     <div className="min-h-screen bg-slate-50 flex">
-      {/* Sidebar (Desktop Permanent / Mobile Collapsible) */}
+      {/* Sidebar */}
       <Sidebar
         currentTab={currentTab}
         onSelectTab={handleSelectTab}
@@ -328,6 +496,8 @@ export default function App() {
         isOpenMobile={isMobileMenuOpen}
         onCloseMobile={() => setIsMobileMenuOpen(false)}
         categoryCounts={categoryCounts}
+        purchaseOrderCount={purchaseOrders.length}
+        pendingPOCount={pendingPOCount}
       />
 
       {/* Main Content Area */}
@@ -341,33 +511,34 @@ export default function App() {
 
         {/* Scrollable View Container */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
+          {/* 1. Dashboard View */}
           {currentTab === 'dashboard' && (
             <DashboardView
               inventory={inventory}
+              purchaseOrders={purchaseOrders}
               activities={activities}
               onOpenAddModal={handleOpenAddModal}
+              onOpenAddPOModal={handleOpenAddPOModal}
+              onOpenPOStatusModal={(status) => setPoStatusModalType(status)}
               onSelectCategory={(cat) => {
                 setActiveCategoryFilter(cat);
-                setCurrentTab(
-                  cat === 'PC ITEMS'
-                    ? 'pc-items'
-                    : cat === 'NETWORK ITEMS'
-                    ? 'network-items'
-                    : 'cctv-items'
-                );
+                setCurrentTab('inventory');
               }}
               onViewItem={(item) => setDetailItem(item)}
+              onViewPOItem={(po) => setDetailPOItem(po)}
               onViewAllInventory={() => {
                 setActiveCategoryFilter('ALL');
                 setCurrentTab('inventory');
               }}
+              onNavigateToPOs={() => {
+                setActivePOStatusFilter('ALL');
+                setCurrentTab('purchase-orders');
+              }}
             />
           )}
 
-          {(currentTab === 'inventory' ||
-            currentTab === 'pc-items' ||
-            currentTab === 'network-items' ||
-            currentTab === 'cctv-items') && (
+          {/* 2. Inventory View */}
+          {currentTab === 'inventory' && (
             <InventoryView
               inventory={inventory}
               onOpenAddModal={() =>
@@ -384,7 +555,23 @@ export default function App() {
             />
           )}
 
-          {currentTab === 'monthly-data' && (
+          {/* 3. Purchase Order Data View */}
+          {currentTab === 'purchase-orders' && (
+            <PurchaseOrdersView
+              purchaseOrders={purchaseOrders}
+              onOpenAddModal={handleOpenAddPOModal}
+              onViewItem={(po) => setDetailPOItem(po)}
+              onEditItem={handleOpenEditPOModal}
+              onDeleteItem={handleRequestDeletePO}
+              onToggleStatus={handleTogglePOStatus}
+              onViewPhoto={handleViewPhoto}
+              onExportExcel={handleExportPOExcel}
+              initialStatusFilter={activePOStatusFilter}
+            />
+          )}
+
+          {/* 4. Monthly Data Inventory */}
+          {currentTab === 'monthly-data-inventory' && (
             <MonthlyDataView
               inventory={inventory}
               onOpenAddModal={() => handleOpenAddModal()}
@@ -396,21 +583,49 @@ export default function App() {
             />
           )}
 
-          {currentTab === 'export-data' && (
+          {/* 5. Monthly Data Purchase Order */}
+          {currentTab === 'monthly-data-purchase-orders' && (
+            <MonthlyDataPOView
+              purchaseOrders={purchaseOrders}
+              onOpenAddModal={handleOpenAddPOModal}
+              onViewItem={(po) => setDetailPOItem(po)}
+              onEditItem={handleOpenEditPOModal}
+              onDeleteItem={handleRequestDeletePO}
+              onViewPhoto={handleViewPhoto}
+              onExportMonthPO={handleExportMonthPO}
+            />
+          )}
+
+          {/* 6. Export Data Inventory */}
+          {currentTab === 'export-data-inventory' && (
             <ExportDataView inventory={inventory} onShowToast={showToast} />
           )}
 
+          {/* 7. Export Data Purchase Order */}
+          {currentTab === 'export-data-purchase-orders' && (
+            <ExportDataPOView purchaseOrders={purchaseOrders} onShowToast={showToast} />
+          )}
+
+          {/* 8. Settings View */}
           {currentTab === 'settings' && (
             <SettingsView
               user={currentUser}
               onLogout={handleLogout}
               inventoryCount={inventory.length}
+              purchaseOrderCount={purchaseOrders.length}
+              inventory={inventory}
+              purchaseOrders={purchaseOrders}
+              settings={settings}
+              onUpdateSettings={handleUpdateSettings}
+              onShowToast={showToast}
+              onReloadAllData={loadAllData}
             />
           )}
         </main>
       </div>
 
-      {/* Modals */}
+      {/* --- MODALS --- */}
+      {/* Add / Edit Inventory Modal */}
       <AddEditInventoryModal
         isOpen={isAddEditModalOpen}
         onClose={() => setIsAddEditModalOpen(false)}
@@ -419,6 +634,7 @@ export default function App() {
         defaultCategory={defaultCategoryForAdd}
       />
 
+      {/* Inventory Detail Modal */}
       <InventoryDetailModal
         item={detailItem}
         onClose={() => setDetailItem(null)}
@@ -427,6 +643,7 @@ export default function App() {
         onViewPhoto={handleViewPhoto}
       />
 
+      {/* Delete Inventory Confirm Modal */}
       <DeleteConfirmModal
         isOpen={!!itemToDelete}
         item={itemToDelete}
@@ -435,6 +652,61 @@ export default function App() {
         isDeleting={isDeleting}
       />
 
+      {/* Add / Edit Purchase Order Modal */}
+      <AddEditPOModal
+        isOpen={isAddEditPOModalOpen}
+        onClose={() => setIsAddEditPOModalOpen(false)}
+        onSuccess={handleSavedPO}
+        itemToEdit={poItemToEdit}
+      />
+
+      {/* Purchase Order Detail Modal */}
+      <PODetailModal
+        item={detailPOItem}
+        onClose={() => setDetailPOItem(null)}
+        onEdit={handleOpenEditPOModal}
+        onDelete={handleRequestDeletePO}
+        onToggleStatus={handleTogglePOStatus}
+        onViewPhoto={handleViewPhoto}
+      />
+
+      {/* Delete Purchase Order Confirm Modal */}
+      {poItemToDelete && (
+        <DeleteConfirmModal
+          isOpen={!!poItemToDelete}
+          item={{
+            id: poItemToDelete.id,
+            itemName: poItemToDelete.itemName,
+            quantity: poItemToDelete.quantity,
+            category: 'ROOM ITEMS', // placeholder
+            dateRepaired: poItemToDelete.orderDate,
+            photoUrl: poItemToDelete.photoUrl,
+            serialNumber: null,
+            createdAt: poItemToDelete.createdAt,
+            createdBy: poItemToDelete.createdBy,
+            updatedAt: poItemToDelete.updatedAt,
+            updatedBy: poItemToDelete.updatedBy,
+          }}
+          onClose={() => setPoItemToDelete(null)}
+          onConfirm={handleConfirmDeletePO}
+          isDeleting={isDeletingPO}
+        />
+      )}
+
+      {/* PO Status List Modal (when clicking Menunggu Datang or Sudah Datang) */}
+      <POStatusModal
+        isOpen={!!poStatusModalType}
+        statusType={poStatusModalType}
+        items={purchaseOrders}
+        onClose={() => setPoStatusModalType(null)}
+        onSelectItem={(po) => setDetailPOItem(po)}
+        onNavigateToPOsWithStatus={(status) => {
+          setActivePOStatusFilter(status);
+          setCurrentTab('purchase-orders');
+        }}
+      />
+
+      {/* Fullscreen Photo Lightbox Modal */}
       <ImageViewerModal
         isOpen={!!viewPhotoUrl}
         photoUrl={viewPhotoUrl}
@@ -442,6 +714,7 @@ export default function App() {
         onClose={() => setViewPhotoUrl(null)}
       />
 
+      {/* Secret Code Modal */}
       <SecretCodeModal
         isOpen={isSecretModalOpen}
         onClose={() => setIsSecretModalOpen(false)}

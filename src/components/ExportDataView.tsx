@@ -95,10 +95,10 @@ export const ExportDataView: React.FC<ExportDataViewProps> = ({
       {/* Title */}
       <div>
         <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-          EXPORT DATA CENTER
+          EXPORT DATA INVENTORY
         </h2>
         <p className="text-xs sm:text-sm text-slate-500">
-          Generate structured Microsoft Excel (.xlsx) spreadsheets with embedded equipment photos
+          Ekspor laporan data inventaris IT ke spreadsheet Excel (.xlsx) resmi lengkap dengan foto
         </p>
       </div>
 

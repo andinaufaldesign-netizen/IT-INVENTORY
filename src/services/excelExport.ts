@@ -1,5 +1,5 @@
 import ExcelJS from 'exceljs';
-import { InventoryItem } from '../types';
+import { InventoryItem, PurchaseOrderItem } from '../types';
 
 function formatDate(dateStr: string): string {
   if (!dateStr) return '-';
@@ -248,6 +248,222 @@ export async function exportInventoryToExcel(
   worksheet.autoFilter = {
     from: { row: 4, column: 1 },
     to: { row: Math.max(currentRowIndex - 1, 4), column: 10 },
+  };
+
+  // Generate buffer and trigger download
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  });
+  const url = window.URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = fileName.endsWith('.xlsx') ? fileName : `${fileName}.xlsx`;
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  window.URL.revokeObjectURL(url);
+}
+
+export async function exportPurchaseOrdersToExcel(
+  items: PurchaseOrderItem[],
+  title: string,
+  fileName: string,
+  sheetName = 'PURCHASE ORDERS'
+): Promise<void> {
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'HOTEL IT INVENTORY MANAGEMENT';
+  workbook.lastModifiedBy = 'HOTEL IT INVENTORY';
+  workbook.created = new Date();
+  workbook.modified = new Date();
+
+  // Create worksheet with safe tab name (max 31 chars, no special chars)
+  const safeSheetName = sheetName.replace(/[:\\/?*\[\]]/g, ' ').substring(0, 30).trim() || 'PURCHASE ORDERS';
+  const worksheet = workbook.addWorksheet(safeSheetName, {
+    views: [{ showGridLines: true }],
+  });
+
+  // Title styling (Cols A to M = 13 columns)
+  worksheet.mergeCells('A1:M1');
+  const titleRow1 = worksheet.getCell('A1');
+  titleRow1.value = 'HOTEL IT PURCHASE ORDER REPORT';
+  titleRow1.font = { name: 'Arial', size: 16, bold: true, color: { argb: 'FF0F172A' } };
+  titleRow1.alignment = { vertical: 'middle', horizontal: 'center' };
+  worksheet.getRow(1).height = 28;
+
+  worksheet.mergeCells('A2:M2');
+  const titleRow2 = worksheet.getCell('A2');
+  titleRow2.value = title.toUpperCase();
+  titleRow2.font = { name: 'Arial', size: 12, bold: true, color: { argb: 'FF2563EB' } };
+  titleRow2.alignment = { vertical: 'middle', horizontal: 'center' };
+  worksheet.getRow(2).height = 24;
+
+  // Metadata row (Export timestamp)
+  worksheet.mergeCells('A3:M3');
+  const titleRow3 = worksheet.getCell('A3');
+  titleRow3.value = `Report Generated: ${new Date().toLocaleString('en-US', { dateStyle: 'full', timeStyle: 'short' })} | Total Records: ${items.length}`;
+  titleRow3.font = { name: 'Arial', size: 9, italic: true, color: { argb: 'FF64748B' } };
+  titleRow3.alignment = { vertical: 'middle', horizontal: 'center' };
+  worksheet.getRow(3).height = 18;
+
+  // Header row at row 4
+  const headerRowNumber = 4;
+  const headers = [
+    'No.',
+    'Item Photo',
+    'Item Name',
+    'Order Date',
+    'Arrival Date',
+    'Quantity (Units)',
+    'For Use',
+    'Remarks',
+    'Status',
+    'Added By',
+    'Last Edited By',
+    'Created At',
+    'Last Updated',
+  ];
+
+  const headerRow = worksheet.getRow(headerRowNumber);
+  headerRow.values = headers;
+  headerRow.height = 28;
+
+  headerRow.eachCell((cell) => {
+    cell.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
+    cell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF1E293B' }, // Dark navy slate
+    };
+    cell.alignment = { vertical: 'middle', horizontal: 'center' };
+    cell.border = {
+      top: { style: 'thin', color: { argb: 'FF94A3B8' } },
+      left: { style: 'thin', color: { argb: 'FF94A3B8' } },
+      bottom: { style: 'medium', color: { argb: 'FF0F172A' } },
+      right: { style: 'thin', color: { argb: 'FF94A3B8' } },
+    };
+  });
+
+  // Column widths (13 columns)
+  worksheet.columns = [
+    { key: 'no', width: 6 },
+    { key: 'foto', width: 14 },
+    { key: 'itemName', width: 34 },
+    { key: 'orderDate', width: 18 },
+    { key: 'arrivalDate', width: 18 },
+    { key: 'quantity', width: 16 },
+    { key: 'forUse', width: 24 },
+    { key: 'remarks', width: 30 },
+    { key: 'status', width: 20 },
+    { key: 'addedBy', width: 16 },
+    { key: 'lastEditedBy', width: 16 },
+    { key: 'createdAt', width: 22 },
+    { key: 'lastUpdated', width: 22 },
+  ];
+
+  // Freeze panes below header
+  worksheet.views = [{ state: 'frozen', xSplit: 0, ySplit: 4, showGridLines: true }];
+
+  // Pre-load images in parallel
+  const imagePromises = items.map((item) => (item.photoUrl ? fetchImageBase64(item.photoUrl) : Promise.resolve(null)));
+  const loadedImages = await Promise.all(imagePromises);
+
+  // Fill data rows
+  let currentRowIndex = 5;
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    const row = worksheet.getRow(currentRowIndex);
+    row.height = 54; // Sized for comfortable 45px thumbnail
+
+    const statusDisplay = item.status === 'ARRIVED' ? 'Arrived' : 'Waiting for Arrival';
+
+    row.values = [
+      i + 1,
+      '', // Placeholder for image in cell B
+      item.itemName,
+      formatDate(item.orderDate),
+      item.arrivalDate ? formatDate(item.arrivalDate) : '-',
+      item.quantity || 1,
+      item.forUse || '-',
+      item.remarks || '-',
+      statusDisplay,
+      item.createdBy,
+      item.updatedBy || item.createdBy,
+      formatDateTime(item.createdAt),
+      formatDateTime(item.updatedAt || item.createdAt),
+    ];
+
+    // Alignments and borders
+    row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+      cell.font = { name: 'Arial', size: 10 };
+      cell.border = {
+        top: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+        left: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+        bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+        right: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+      };
+
+      if (colNumber === 1) {
+        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+      } else if (colNumber === 2) {
+        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+      } else if (colNumber === 3) {
+        cell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: true };
+        cell.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FF0F172A' } };
+      } else if (colNumber === 4 || colNumber === 5) {
+        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+      } else if (colNumber === 6) {
+        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+        cell.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FF2563EB' } };
+      } else if (colNumber === 7 || colNumber === 8) {
+        cell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: true };
+      } else if (colNumber === 9) {
+        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+        if (item.status === 'ARRIVED') {
+          cell.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FF16A34A' } }; // Green
+        } else {
+          cell.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FFD97706' } }; // Amber
+        }
+      } else {
+        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+      }
+
+      // Zebra striping
+      if (i % 2 === 1) {
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFF8FAFC' },
+        };
+      }
+    });
+
+    // Embed image into cell B
+    const imgData = loadedImages[i];
+    if (imgData) {
+      try {
+        const imageId = workbook.addImage({
+          base64: imgData.base64,
+          extension: imgData.extension,
+        });
+
+        worksheet.addImage(imageId, {
+          tl: { col: 1.15, row: currentRowIndex - 1 + 0.1 },
+          ext: { width: 50, height: 48 },
+          editAs: 'oneCell',
+        });
+      } catch (err) {
+        console.warn('Failed embedding image for purchase order item:', item.itemName, err);
+      }
+    }
+
+    currentRowIndex++;
+  }
+
+  // Auto-filter across all 13 columns
+  worksheet.autoFilter = {
+    from: { row: 4, column: 1 },
+    to: { row: Math.max(currentRowIndex - 1, 4), column: 13 },
   };
 
   // Generate buffer and trigger download
